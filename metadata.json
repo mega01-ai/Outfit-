@@ -1,0 +1,5 @@
+{
+  "name": "Outfit",
+  "description": "An application to help users digitally organize their clothes, professionalize their clothing images using AI, and get personalized outfit suggestions.",
+  "requestFramePermissions": []
+}
