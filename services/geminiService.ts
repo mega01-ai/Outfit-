@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import type { ClothingInfo, ClothingItem, OutfitSuggestion } from '../types';
 
@@ -17,6 +16,10 @@ const fileToGenerativePart = (base64Data: string, mimeType: string) => {
       mimeType,
     },
   };
+};
+
+const dataUrlToBase64 = (dataUrl: string): string => {
+    return dataUrl.split(',')[1];
 };
 
 export const analyzeClothingItem = async (
@@ -103,4 +106,30 @@ export const getOutfitSuggestions = async (
 
   const jsonString = result.text.trim();
   return JSON.parse(jsonString) as OutfitSuggestion[];
+};
+
+export const generateOutfitImage = async (
+    items: ClothingItem[]
+): Promise<string> => {
+    const prompt = `أنت مصمم أزياء ومنشئ صور محترف. قم بإنشاء صورة واقعية عالية الجودة لعارض أزياء (بدون وجه واضح) يرتدي الطقم المكون من قطع الملابس التالية. يجب أن تكون الصورة بأسلوب تصوير المنتجات للمتاجر الإلكترونية، مع خلفية استوديو احترافية بلون رمادي فاتح وإضاءة ممتازة. ادمج القطع معًا بشكل طبيعي ومتناسق.`;
+
+    const imageParts = items.map(item => {
+        const base64Data = dataUrlToBase64(item.processedImageUrl);
+        const mimeType = item.processedImageUrl.substring(item.processedImageUrl.indexOf(":") + 1, item.processedImageUrl.indexOf(";"));
+        return fileToGenerativePart(base64Data, mimeType);
+    });
+
+    const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: { parts: [...imageParts, { text: prompt }] },
+        config: {
+            responseModalities: [Modality.IMAGE],
+        }
+    });
+
+    const firstPart = result.candidates?.[0]?.content?.parts[0];
+    if (firstPart && firstPart.inlineData) {
+        return `data:${firstPart.inlineData.mimeType};base64,${firstPart.inlineData.data}`;
+    }
+    throw new Error("Could not generate outfit image.");
 };
