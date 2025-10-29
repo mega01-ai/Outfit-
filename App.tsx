@@ -1,5 +1,6 @@
+
 import React, { useState, useCallback } from 'react';
-import { ClothingItem, View } from './types';
+import { ClothingItem, UserProfile, View } from './types';
 import Header from './components/Header';
 import Wardrobe from './components/Wardrobe';
 import Suggestions from './components/Suggestions';
@@ -9,6 +10,11 @@ import BottomNav from './components/BottomNav';
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.WARDROBE);
   const [wardrobeItems, setWardrobeItems] = useState<ClothingItem[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    height: '',
+    weight: '',
+    photo: null,
+  });
 
   const addWardrobeItem = useCallback((item: ClothingItem) => {
     setWardrobeItems(prevItems => [...prevItems, { ...item, id: Date.now() }]);
@@ -25,7 +31,7 @@ const App: React.FC = () => {
       case View.SUGGESTIONS:
         return <Suggestions items={wardrobeItems} />;
       case View.OUTFIT_CREATOR:
-        return <OutfitCreator items={wardrobeItems} />;
+        return <OutfitCreator items={wardrobeItems} userProfile={userProfile} setUserProfile={setUserProfile} />;
       default:
         return <Wardrobe items={wardrobeItems} onAddItem={addWardrobeItem} onRemoveItem={removeWardrobeItem} />;
     }

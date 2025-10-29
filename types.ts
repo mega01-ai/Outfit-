@@ -36,3 +36,10 @@ export interface OutfitSuggestion {
     outfitName: string;
     items: string[];
 }
+
+// Represents the user's physical information for personalized generation
+export interface UserProfile {
+  height: string;
+  weight: string;
+  photo: string | null; // dataURL
+}

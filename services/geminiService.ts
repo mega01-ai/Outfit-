@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import type { ClothingInfo, ClothingItem, OutfitSuggestion } from '../types';
+import type { ClothingInfo, ClothingItem, OutfitSuggestion, UserProfile } from '../types';
 
 const API_KEY = process.env.API_KEY;
 
@@ -109,19 +110,35 @@ export const getOutfitSuggestions = async (
 };
 
 export const generateOutfitImage = async (
-    items: ClothingItem[]
+    items: ClothingItem[],
+    userProfile: UserProfile
 ): Promise<string> => {
-    const prompt = `أنت مصمم أزياء ومنشئ صور محترف. قم بإنشاء صورة واقعية عالية الجودة لعارض أزياء (بدون وجه واضح) يرتدي الطقم المكون من قطع الملابس التالية. يجب أن تكون الصورة بأسلوب تصوير المنتجات للمتاجر الإلكترونية، مع خلفية استوديو احترافية بلون رمادي فاتح وإضاءة ممتازة. ادمج القطع معًا بشكل طبيعي ومتناسق.`;
+    const prompt = `أنت مصمم أزياء ومنشئ صور محترف. قم بإنشاء صورة واقعية عالية الجودة لعارض أزياء يرتدي الطقم المكون من قطع الملابس التالية. 
+    **مهم جداً:** يجب أن يكون شكل جسم عارض الأزياء مطابقاً للشخص في الصورة المرجعية المرفقة، مع الأخذ في الاعتبار الطول (${userProfile.height} سم) والوزن (${userProfile.weight} كجم). يجب أن يكون وجه العارض غير واضح أو محجوب.
+    يجب أن تكون الصورة بأسلوب تصوير المنتجات للمتاجر الإلكترونية، مع خلفية استوديو احترافية بلون رمادي فاتح وإضاءة ممتازة. ادمج القطع معًا بشكل طبيعي ومتناسق على الجسم.`;
 
-    const imageParts = items.map(item => {
+    const clothingImageParts = items.map(item => {
         const base64Data = dataUrlToBase64(item.processedImageUrl);
         const mimeType = item.processedImageUrl.substring(item.processedImageUrl.indexOf(":") + 1, item.processedImageUrl.indexOf(";"));
         return fileToGenerativePart(base64Data, mimeType);
     });
 
+    const allParts = [...clothingImageParts];
+    if (userProfile.photo) {
+        const userPhotoBase64 = dataUrlToBase64(userProfile.photo);
+        const userPhotoMimeType = userProfile.photo.substring(userProfile.photo.indexOf(":") + 1, userProfile.photo.indexOf(";"));
+        const userPhotoPart = fileToGenerativePart(userPhotoBase64, userPhotoMimeType);
+        allParts.unshift(userPhotoPart); // Add user photo as the first image for reference
+    }
+    
+    // FIX: The `allParts` array is inferred to only contain image parts.
+    // Pushing a text part (`{ text: prompt }`) causes a type error.
+    // The fix is to construct the final `parts` array with both image and text parts
+    // inline in the `generateContent` call. This allows TypeScript to correctly
+    // infer the union type for the array elements.
     const result = await ai.models.generateContent({
         model: "gemini-2.5-flash-image",
-        contents: { parts: [...imageParts, { text: prompt }] },
+        contents: { parts: [...allParts, { text: prompt }] },
         config: {
             responseModalities: [Modality.IMAGE],
         }
