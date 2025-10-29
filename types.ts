@@ -5,6 +5,7 @@ export interface ClothingItem {
   color: string;
   style: string;
   season: string;
+  description: string;
   originalImageUrl: string;
   processedImageUrl: string;
 }
@@ -27,6 +28,7 @@ export interface ClothingInfo {
     color: string;
     style: string;
     season: string;
+    description: string;
 }
 
 // Represents the JSON structure expected from Gemini for outfit suggestions

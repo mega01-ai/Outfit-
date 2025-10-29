@@ -24,20 +24,23 @@ export const analyzeClothingItem = async (
   mimeType: string
 ): Promise<ClothingInfo> => {
   const imagePart = fileToGenerativePart(base64Image, mimeType);
+  const prompt = "حلل قطعة الملابس في هذه الصورة. استجب بتنسيق JSON. يجب أن يحتوي كائن JSON على هذه المفاتيح: 'type' (مثل 'قميص'، 'جينز')، 'color' (اللون السائد)، 'style' (مثل 'كاجوال'، 'رسمي')، 'season' (مثل 'صيف'، 'شتاء')، و 'description' (وصف موجز للقطعة بما في ذلك أي نقوش أو تفاصيل). يجب أن تكون جميع القيم باللغة العربية.";
+  
   const result = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: { parts: [imagePart, {text: "วิเคราะห์รายการเสื้อผ้าในภาพนี้ อธิบายในรูปแบบ JSON วัตถุ JSON ควรมีคีย์เหล่านี้: 'type' (เช่น 'T-Shirt', 'Jeans'), 'color' (สีเด่น), 'style' (เช่น 'Casual', 'Formal'), และ 'season' (เช่น 'Summer', 'Winter') ตอบเป็นภาษาไทย"}] }, // Prompt in Thai for Arabic context, but asking for English values
+    contents: { parts: [imagePart, {text: prompt}] },
     config: {
         responseMimeType: "application/json",
         responseSchema: {
             type: Type.OBJECT,
             properties: {
-                type: { type: Type.STRING },
-                color: { type: Type.STRING },
-                style: { type: Type.STRING },
-                season: { type: Type.STRING },
+                type: { type: Type.STRING, description: "نوع قطعة الملابس" },
+                color: { type: Type.STRING, description: "اللون الأساسي للملابس" },
+                style: { type: Type.STRING, description: "نمط الملابس" },
+                season: { type: Type.STRING, description: "الموسم المناسب للملابس" },
+                description: { type: Type.STRING, description: "وصف مفصل للملابس" },
             },
-            required: ["type", "color", "style", "season"]
+            required: ["type", "color", "style", "season", "description"]
         }
     }
   });
@@ -53,7 +56,7 @@ export const professionalizeImage = async (
   const imagePart = fileToGenerativePart(base64Image, mimeType);
   const result = await ai.models.generateContent({
     model: "gemini-2.5-flash-image",
-    contents: { parts: [imagePart, {text: "Take the clothing item from this image, remove the background completely, and place it on a clean, light grey, professional studio background. The item should be centered and well-lit, suitable for an e-commerce website."}] },
+    contents: { parts: [imagePart, {text: "Take the clothing item from this image. If it is wrinkled or creased, digitally smooth it out to make it look perfectly ironed. Then, remove the background completely and place it on a clean, light grey, professional studio background. The item should be centered and well-lit, suitable for an e-commerce website."}] },
     config: {
         responseModalities: [Modality.IMAGE],
     }
