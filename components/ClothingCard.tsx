@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { ClothingItem } from '../types';
+import ImageModal from './ImageModal';
 
 interface ClothingCardProps {
   item: ClothingItem;
@@ -22,42 +23,63 @@ const CheckCircleIcon = () => (
 
 
 const ClothingCard: React.FC<ClothingCardProps> = ({ item, onRemove, isSelected, onSelectToggle }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
-    <div
-      className={`group relative bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl ${isSelected ? 'ring-4 ring-indigo-500' : ''}`}
-    >
-      <img
-        src={item.processedImageUrl}
-        alt={item.type}
-        className="w-full h-56 object-cover"
-      />
-      <div className="p-4">
-        <h3 className="font-bold text-lg capitalize text-gray-800 truncate">{item.type}</h3>
-        <p className="text-sm text-gray-600 mt-1 truncate h-5">{item.description}</p>
-        <div className="flex items-center justify-between mt-3">
-            <p className="text-sm text-gray-500 capitalize truncate">{item.color} - {item.style}</p>
-            <span className="text-xs flex-shrink-0 font-medium bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">{item.season}</span>
+    <>
+      <div
+        className={`group relative bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl ${isSelected ? 'ring-4 ring-indigo-500' : ''}`}
+      >
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setIsModalOpen(true)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsModalOpen(true); }}
+          className="w-full h-56 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          aria-label={`View larger image of ${item.type}`}
+        >
+          <img
+            src={item.processedImageUrl}
+            alt={item.type}
+            className="w-full h-full object-cover"
+          />
         </div>
+        <div className="p-4">
+          <h3 className="font-bold text-lg capitalize text-gray-800 truncate">{item.type}</h3>
+          <p className="text-sm text-gray-600 mt-1 truncate h-5">{item.description}</p>
+          <div className="flex items-center justify-between mt-3">
+              <p className="text-sm text-gray-500 capitalize truncate">{item.color} - {item.style}</p>
+              <span className="text-xs flex-shrink-0 font-medium bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">{item.season}</span>
+          </div>
+        </div>
+        {onRemove && (
+          <button 
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+              aria-label="Remove item"
+          >
+              <TrashIcon />
+          </button>
+        )}
+        {onSelectToggle && (
+          <button
+              onClick={(e) => { e.stopPropagation(); onSelectToggle(); }}
+              className={`absolute top-2 right-2 text-white p-1.5 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 ring-offset-2 ${isSelected ? 'bg-green-500 hover:bg-green-600 focus:ring-green-500' : 'bg-indigo-500 hover:bg-indigo-600 focus:ring-indigo-500'}`}
+              aria-label={isSelected ? "Deselect item" : "Select item"}
+          >
+              {isSelected ? <CheckCircleIcon /> : <PlusCircleIcon />}
+          </button>
+        )}
       </div>
-      {onRemove && (
-        <button 
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
-            aria-label="Remove item"
-        >
-            <TrashIcon />
-        </button>
+
+      {isModalOpen && (
+        <ImageModal
+          imageUrl={item.processedImageUrl}
+          altText={item.description}
+          onClose={() => setIsModalOpen(false)}
+        />
       )}
-      {onSelectToggle && (
-        <button
-            onClick={(e) => { e.stopPropagation(); onSelectToggle(); }}
-            className={`absolute top-2 right-2 text-white p-1.5 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 ring-offset-2 ${isSelected ? 'bg-green-500 hover:bg-green-600 focus:ring-green-500' : 'bg-indigo-500 hover:bg-indigo-600 focus:ring-indigo-500'}`}
-            aria-label={isSelected ? "Deselect item" : "Select item"}
-        >
-            {isSelected ? <CheckCircleIcon /> : <PlusCircleIcon />}
-        </button>
-      )}
-    </div>
+    </>
   );
 };
 
